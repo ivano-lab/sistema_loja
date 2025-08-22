@@ -13,7 +13,7 @@ class Produto:
     def menu_produto(self):
         while True:
             utils.print_linha()
-            print("MÓDULO DE PRODUTOS da classe")
+            print("MÓDULO DE PRODUTOS")
             utils.print_linha()
             print("1 - Listar produtos")
             print("2 - Cadastrar produto")
@@ -40,15 +40,16 @@ class Produto:
     def cadastrar_produto(self):
         nome_produto = input("Nome do produto: ")
         codigo = input("Código do produto: ")
-        preco_compra = input("Preço de compra: ")
-        preco_venda = input("Preço de venda: ")
-        quantidade = input("Quantidade: ")
+        preco_compra = utils.validar_preco("Preço de compra R$: ")
+        preco_venda = utils.validar_preco("Preço de venda R$: ")
+        quantidade = utils.validar_quantidade()
 
         self.cursor.execute(
             "INSERT INTO produtos (nome_produto, codigo, preco_compra, preco_venda, estoque) VALUES (?, ?, ?, ?, ?)",
             (nome_produto, codigo, preco_compra, preco_venda, quantidade)
         )
         self.conn.commit()
+        print()
         print("Produto cadastrado com sucesso!")
 
     def listar_produto(self):
@@ -61,7 +62,7 @@ class Produto:
             print("Nenhum produto cadastrado.")
         else:
             for p in produtos:
-                print(f"Nome: {p[1]} | Código: {p[1]} | Preço de compra: {p[2]} | Preço de venda: {p[3]} | Quantidade em estoque: {p[4]}")
+                print(f"Nome: {p[1]} | Código: {p[2]} | Preço de compra: {utils.formatar_moeda(p[3])} | Preço de venda: {utils.formatar_moeda(p[4])} | Quantidade em estoque: {p[5]}")
                 print()
 
     def deletar_produto(self):
@@ -85,9 +86,9 @@ class Produto:
             print(f"Atualizando registro: {produto[1]} | Código: {produto[2]}")
             novo_nome_produto = input(f"Novo nome (ENTER para manter '{produto[1]}'): ") or produto[1]
             novo_codigo = input(f"Novo código (ENTER para manter '{produto[2]}'): ") or produto[2]
-            novo_preco_compra = input(f"Novo preço de compra (ENTER para manter '{produto[3]}'): ") or produto[3]
-            novo_preco_venda = input(f"Novo preço de venda (ENTER para manter '{produto[4]}'): ") or produto[4]
-            nova_quantidade = input(f"Nova quantidade (ENTER para manter '{produto[5]}'): ") or produto[5]
+            novo_preco_compra = utils.validar_preco(f"Novo preço de compra (ENTER para manter '{produto[3]}'): ") or produto[3]
+            novo_preco_venda = utils.validar_preco(f"Novo preço de venda (ENTER para manter '{produto[4]}'): ") or produto[4]
+            nova_quantidade = utils.validar_quantidade(f"Nova quantidade (ENTER para manter '{produto[5]}'): ") or produto[5]
 
             self.cursor.execute("""
                 UPDATE produtos

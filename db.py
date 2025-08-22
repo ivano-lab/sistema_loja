@@ -5,10 +5,16 @@ cursor = conn.cursor()
 
 cursor.execute("""
     CREATE TABLE clientes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL,
-        cpf TEXT NOT NULL,
-        data_nascimento TEXT NOT NULL
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    tipo_cliente TEXT CHECK(tipo_cliente IN ('PF', 'PJ')) NOT NULL,
+    cpf TEXT,
+    cnpj TEXT,
+    data_nascimento TEXT,
+    CHECK (
+        (tipo_cliente = 'PF' AND cpf IS NOT NULL AND cnpj IS NULL) OR
+        (tipo_cliente = 'PJ' AND cnpj IS NOT NULL AND cpf IS NULL)
+        )
     )
 """)
 
