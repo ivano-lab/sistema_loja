@@ -1,0 +1,1 @@
+Os arquivos de persistência, relatórios (csv, json, pdf...) virão para cá.

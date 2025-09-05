@@ -1,0 +1,376 @@
+import os
+import sqlite3
+import utils
+
+class Cliente:
+    def __init__(self, db_path=None):
+        if db_path is None:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            db_path = os.path.abspath(os.path.join(base_dir, '..', 'loja.db'))
+        self.conn = sqlite3.connect(db_path)
+        self.cursor = self.conn.cursor()
+
+    def menu_cliente(self):
+        while True:
+            utils.print_linha()
+            print("MÓDULO DE CLIENTES")
+            utils.print_linha()
+            print("1 - Listar clientes")
+            print("2 - Cadastrar cliente")
+            print("3 - Atualizar cliente")
+            print("4 - Deletar cliente")
+            print("0 - Voltar")
+            print()
+            opcao = input("Escolha: ")
+
+            if opcao == "1":
+                self.listar_clientes()
+
+            elif opcao == "2":
+                self.cadastrar_cliente()
+
+            elif opcao == "3":
+                self.atualizar_cliente()
+
+            elif opcao == "4":
+                self.deletar_cliente()
+
+            elif opcao == "0":
+                print("Saindo do módulo de Clientes...")
+                break
+            else:
+                print("X Opção inválida.")
+
+    def cadastrar_cliente(self):
+        global data_nasc
+        nome = input("Nome do cliente: ")
+        cpf = None
+        cnpj = None
+        while True:
+            tipo_cliente = input("Tipo de cliente (PF para pessoa física / PJ para pessoa jurídica): ").strip().upper()
+            if tipo_cliente in ("PF", "PJ"):
+                break
+            print("Tipo cliente inválido. Digite PF ou PJ.")
+
+        if tipo_cliente == "PF":
+            cpf = utils.validar_cpf()
+            cnpj = None
+            data_nasc = input("Data de fundação da empresa (DD/MM/AAAA): ")
+
+        else:
+            cnpj = utils.validar_cnpj()
+            cpf = None
+            data_nasc = input("Data de nascimento do cliente (DD/MM/AAAA): ")
+
+        self.cursor.execute(
+            "INSERT INTO clientes (nome, tipo_cliente, cpf, cnpj, data_nascimento) VALUES (?, ?, ?, ?, ?)",
+            (nome, tipo_cliente, cpf, cnpj, data_nasc)
+        )
+        self.conn.commit()
+        print("\nCliente cadastrado com sucesso!")
+
+    def listar_clientes(self):
+        utils.print_linha()
+        print("LISTAGEM DE CLIENTES")
+        utils.print_linha()
+        self.cursor.execute("SELECT * FROM clientes")
+        clientes = self.cursor.fetchall()
+        if not clientes:
+            print("Nenhum cliente cadastrado.")
+        else:
+            for c in clientes:
+                print(
+                    f"Cliente: {c[1]}")
+                utils.underline()
+
+    def deletar_cliente(self):
+        id_delecao = input("Digite o ID do cliente a ser deletado: ")
+        self.cursor.execute("DELETE FROM clientes WHERE id = ?", (id_delecao,))
+        if self.cursor.rowcount == 0:
+            print("Nenhum cliente encontrado com este ID.")
+        else:
+            self.conn.commit()
+            print("Cliente deletado com sucesso!")
+
+    def atualizar_cliente(self):
+        id_atualizacao = input("Digite o ID do cliente a ser atualizado: ")
+        self.cursor.execute("SELECT * FROM clientes WHERE id = ?", (id_atualizacao,))
+        cliente = self.cursor.fetchone()
+
+        if not cliente:
+            print("Nenhum cliente encontrado com este ID.")
+        else:
+            self.conn.commit()
+            print(f"Atualizando registro: {cliente[1]} | CPF: {cliente[2]}")
+            novo_nome_cliente = input(f"Editar nome (ENTER para manter '{cliente[1]}'): ") or cliente[1]
+            novo_cpf = input(f"Editar CPF (ENTER para manter '{cliente[2]}'): ") or cliente[2]
+            nova_data_nasc = input(f"Editar data de nascimento (ENTER para manter '{cliente[3]}'): ") or cliente[3]
+
+            self.cursor.execute("""
+                UPDATE clientes
+                SET nome = ?, cpf = ?, data_nascimento = ?
+                WHERE id = ?
+            """, (novo_nome_cliente, novo_cpf, nova_data_nasc, id_atualizacao))
+            self.conn.commit()
+            print("Cliente atualizado com sucesso!")
+
+    def __del__(self):
+        self.conn.close()
+    from .produto import Produto
+from .cliente import Cliente
+from .venda import Venda
+from .utils import *
+
+__all__ = ['utils', 'produto', 'venda', 'cliente']
+import os
+import sqlite3
+import utils
+
+class Produto:
+    def __init__(self, db_path=None):
+        if db_path is None:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            db_path = os.path.abspath(os.path.join(base_dir, '..', 'loja.db'))
+        self.conn = sqlite3.connect(db_path)
+        self.cursor = self.conn.cursor()
+
+    def menu_produto(self):
+        while True:
+            utils.print_linha()
+            print("MÓDULO DE PRODUTOS")
+            utils.print_linha()
+            print("1 - Listar produtos")
+            print("2 - Cadastrar produto")
+            print("3 - Atualizar produto")
+            print("4 - Deletar produto")
+            print("0 - Voltar")
+            print()
+            opcao = input("Escolha: ")
+
+            if opcao == "1":
+                self.listar_produto()
+            elif opcao == "2":
+                self.cadastrar_produto()
+            elif opcao == "3":
+                self.atualizar_produto()
+            elif opcao == "4":
+                self.deletar_produto()
+            elif opcao == "0":
+                print("Saindo do módulo de Produtos...")
+                break
+            else:
+                print("X Opção inválida.")
+
+    def cadastrar_produto(self):
+        nome_produto = input("Nome do produto: ")
+        codigo = input("Código do produto: ")
+        preco_compra = utils.validar_preco("Preço de compra R$: ")
+        preco_venda = utils.validar_preco("Preço de venda R$: ")
+        quantidade = utils.validar_quantidade()
+
+        self.cursor.execute(
+            "INSERT INTO produtos (nome_produto, codigo, preco_compra, preco_venda, estoque) VALUES (?, ?, ?, ?, ?)",
+            (nome_produto, codigo, preco_compra, preco_venda, quantidade)
+        )
+        self.conn.commit()
+        print()
+        print("Produto cadastrado com sucesso!")
+
+    def listar_produto(self):
+        utils.print_linha()
+        print("LISTAGEM DE PRODUTOS")
+        utils.print_linha()
+        self.cursor.execute("SELECT * FROM produtos")
+        produtos = self.cursor.fetchall()
+        if not produtos:
+            print("Nenhum produto cadastrado.")
+        else:
+            for p in produtos:
+                print(f"Nome: {p[1]} | Código: {p[2]} | Preço de compra: {utils.formatar_moeda(p[3])} | Preço de venda: {utils.formatar_moeda(p[4])} | Quantidade em estoque: {p[5]}")
+                print()
+
+    def deletar_produto(self):
+        id_delecao = input("Digite o ID do produto a ser deletado: ")
+        self.cursor.execute("DELETE FROM produtos WHERE id = ?", (id_delecao,))
+        if self.cursor.rowcount == 0:
+            print("Nenhum produto encontrado com este ID.")
+        else:
+            self.conn.commit()
+            print("Produto deletado com sucesso!")
+
+    def atualizar_produto(self):
+        id_atualizacao = input("Digite o ID do produto a ser atualizado: ")
+        self.cursor.execute("SELECT * FROM produtos WHERE id = ?", (id_atualizacao,))
+        produto = self.cursor.fetchone()
+
+        if not produto:
+            print("Nenhum produto encontrado com este ID.")
+        else:
+            self.conn.commit()
+            print(f"Atualizando registro: {produto[1]} | Código: {produto[2]}")
+            novo_nome_produto = input(f"Novo nome (ENTER para manter '{produto[1]}'): ") or produto[1]
+            novo_codigo = input(f"Novo código (ENTER para manter '{produto[2]}'): ") or produto[2]
+            novo_preco_compra = utils.validar_preco(f"Novo preço de compra (ENTER para manter '{produto[3]}'): ") or produto[3]
+            novo_preco_venda = utils.validar_preco(f"Novo preço de venda (ENTER para manter '{produto[4]}'): ") or produto[4]
+            nova_quantidade = utils.validar_quantidade(f"Nova quantidade (ENTER para manter '{produto[5]}'): ") or produto[5]
+
+            self.cursor.execute("""
+                UPDATE produtos
+                SET nome_produto = ?, codigo = ?, preco_compra = ?, preco_venda = ?, estoque = ?
+                WHERE id = ?
+            """, (novo_nome_produto, novo_codigo, novo_preco_compra, novo_preco_venda, nova_quantidade, id_atualizacao))
+            self.conn.commit()
+            print("Produto atualizado com sucesso!")
+
+    def __del__(self):
+        self.conn.close()import re
+import locale
+import sqlite3
+
+conn = sqlite3.connect('loja.db')
+cursor = conn.cursor()
+
+try:
+    locale.setlocale(locale.LC_ALL, 'pt_BR.UTF8')
+except locale.Error:
+    locale.setlocale(locale.LC_ALL, '')
+
+def formatar_moeda(valor: float) -> str:
+    return locale.currency(valor, grouping=True)
+
+def print_linha():
+    print("=" * 40)
+
+def underline():
+    print("_" * 40)
+
+def validar_preco(texto_prompt):
+    while True:
+        valor = input(texto_prompt)
+        try:
+            preco = float(valor)
+            if preco < 0:
+                print("Preço não pode ser negativo. Tente novamente.")
+                continue
+            return preco
+        except ValueError:
+            print("Valor inválido. Digite um número válido (ex: 12.50).")
+
+def validar_quantidade(texto_prompt="Quandidade: "):
+    while True:
+        entrada = input(texto_prompt)
+        try:
+            quantidade = float(entrada)
+            if quantidade < 0:
+                print("Quantidade não pode ser negativa. Tente novamente.")
+                continue
+            return quantidade
+        except ValueError:
+            print("Quantidade inválida. Digite um número válido (ex: 5, 100, 3500).")
+
+
+def validar_digito_cpf(cpf: str) -> bool:
+    cpf = re.sub(r'\D', '', cpf)
+
+    if len(cpf) != 11 or cpf == cpf[0] * 11:
+        return False
+
+    soma = sum(int(digit) * factor for digit, factor in zip(cpf[:9], range(10, 1, -1)))
+    dig1 = (soma * 10 % 11) % 10
+
+    soma = sum(int(digit) * factor for digit, factor in zip(cpf[:10], range(11, 1, -1)))
+    dig2 = (soma * 10 % 11) % 10
+
+    return cpf[-2:] == f"{dig1}{dig2}"
+
+def validar_cpf():
+    while True:
+        cpf = input("CPF do cliente: ")
+        if validar_digito_cpf(cpf):
+            return cpf
+        else:
+            print("CPF Inválido. Tente novamente.")
+
+def validar_digito_cnpj(cnpj: str) -> bool:
+    cnpj = re.sub(r'\D', '', cnpj)
+
+    if len(cnpj) != 14 or cnpj == cnpj[0] * 14:
+        return False
+
+    def calcular_digito(cnpj_puro, pesos):
+        soma = sum(int(d) * p for d, p in zip(cnpj_puro, pesos))
+        resto = soma % 11
+        return '0' if resto < 2 else str(11 - resto)
+
+    pesos1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+    pesos2 = [6] + pesos1
+
+    dig1 = calcular_digito(cnpj[:12], pesos1)
+    dig2 = calcular_digito(cnpj[:12] + dig1, pesos2)
+
+    return cnpj[-2:] == dig1 + dig2
+
+def validar_cnpj():
+    while True:
+        cnpj = input("CNPJ do cliente: ")
+        if validar_digito_cnpj(cnpj):
+            return cnpj
+        else:
+            print("CNPJ Inválido. Tente novamente.")
+
+
+
+def reseta_banco():
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    tabelas = cursor.fetchall()
+
+    for tabela in tabelas:
+        nome_tabela = tabela[0]
+        if nome_tabela == 'sqlite_sequence':
+            continue
+        cursor.execute(f"DROP TABLE IF EXISTS {nome_tabela}")
+
+    conn.commit()
+    conn.close()import os
+import sqlite3
+import utils
+
+class Venda:
+    def __init__(self, db_path=None):
+        if db_path is None:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            db_path = os.path.abspath(os.path.join(base_dir, '..', 'loja.db'))
+        self.conn = sqlite3.connect(db_path)
+        self.cursor = self.conn.cursor()
+
+    def nova_venda(self):
+        pass
+
+
+    def menu_venda(self):
+        while True:
+            utils.print_linha()
+            print("MÓDULO DE VENDAS")
+            utils.print_linha()
+            print("1 - Listar vendas")
+            print("2 - Efetuar venda")
+            print("3 - Atualizar venda")
+            print("4 - Deletar venda")
+            print("0 - Voltar")
+            print()
+            opcao = input("Escolha: ")
+
+            if opcao == "1":
+                pass
+            elif opcao == "2":
+                pass
+            elif opcao == "3":
+                pass
+            elif opcao == "4":
+                pass
+            elif opcao == "0":
+                print("Saindo do módulo de Clientes...")
+                break
+            else:
+                print("X Opção inválida.")
+

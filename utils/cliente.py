@@ -55,12 +55,12 @@ class Cliente:
         if tipo_cliente == "PF":
             cpf = utils.validar_cpf()
             cnpj = None
-            data_nasc = input("Data de fundação da empresa (DD/MM/AAAA): ")
+            data_nasc = input("Data de nascimento do cliente (DD/MM/AAAA): ")
 
         else:
             cnpj = utils.validar_cnpj()
             cpf = None
-            data_nasc = input("Data de nascimento do cliente (DD/MM/AAAA): ")
+            data_nasc = input("Data de fundação da empresa (DD/MM/AAAA): ")
 
         self.cursor.execute(
             "INSERT INTO clientes (nome, tipo_cliente, cpf, cnpj, data_nascimento) VALUES (?, ?, ?, ?, ?)",
